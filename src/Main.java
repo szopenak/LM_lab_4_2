@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Application;
@@ -18,6 +20,8 @@ public class Main extends Application {
 	// program data
 	StringBuilder sb = new StringBuilder();
 	char [] array;
+	List <String> separatedData = new ArrayList<String>();
+
 	
 	// GUI elements
 	Button convert = new Button("Convert to ONP");
@@ -67,6 +71,7 @@ public class Main extends Application {
 				if (validate(equation.getText())) {
 					convertEquation();
 				} else {
+					sb = new StringBuilder();
 					equation.clear();
 					converted.clear();
 					equation.setPromptText("Wrong equation, type another one!");
@@ -86,16 +91,77 @@ public class Main extends Application {
 	void convertEquation () {
 		String s = equation.getText();
 		char array [] = s.toCharArray();
-		for (char c : array) {
-			String response = ONP.get(c);
-			if (!(response == null)) {sb.append(response);}
+		
+		
+		for (int i = 0; i<array.length; i++) {
+			char temp = array[i];
+			if (String.valueOf(temp).matches("\\d")) {
+				int newI = checkIfNextDec(array, i);
+				if (!(newI == i)) {
+					updateFor(i,newI,array);
+					i = newI;
+				} else {
+					separatedData.add(String.valueOf(temp));
+				}
+			} else if (String.valueOf(temp).matches("\\-")) {
+				
+				int newI = checkIfNextDec(array, i);
+				if (!(newI == i)) {
+					updateFor(i,newI,array);
+					i = newI;
+				} else {
+					separatedData.add(String.valueOf(temp));
+				}
+			} else {
+				separatedData.add(String.valueOf(temp));
+			}
 		}
-		String last = ONP.get('#');
-		if (!(last == null)) {sb.append(last);}
+
+		int size = separatedData.size()-1;
+		String response [] = ONPconverter.infixToRPN(separatedData.toArray(new String [size]));
+		StringBuilder sb = new StringBuilder();
+		for (String element : response) {
+			sb.append(element+" ");
+		}
 		converted.clear();
 		converted.setText(sb.toString());
 		sb = new StringBuilder();
+		separatedData.clear();
 	}
 	
+	int checkIfNextDec(char array[], int i) {
+		if (i + 1 >= array.length) {return i;}
+		if (String.valueOf(array[++i]).matches("\\d")) {
+			return checkIfNextDec(array, i);
+		} else {
+			return i-1;
+		}
+	}
+	
+	int checkIfMinus (char array[], int i) {
+		String operator = "[\\d\\(\\*\\/\\+\\-\\^]";
+		if (i == 0) { 
+			do {
+				i++;
+			} while(String.valueOf(i).matches("\\d"));
+			return --i;	
+		}
+		else if (String.valueOf(array[i-1]).matches(operator)) {
+			do {
+				i++;
+			} while(String.valueOf(i).matches("\\d"));
+			return --i;
+		} else {
+			return i;
+		}
+	}
+	
+	void updateFor(int i, int newI, char [] array) {
+		sb = new StringBuilder();
+		for (int x = i; x <= newI; x++) {
+			sb.append(array[x]);
+		}
+		separatedData.add(sb.toString());
+	}
 	
 }
